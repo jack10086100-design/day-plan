@@ -26,8 +26,16 @@
   .app { max-width:760px; margin:0 auto; padding:24px 20px 80px; }
 
   header { text-align:center; margin-bottom:0; padding:8px 0 4px; }
+  .header-row { display:flex; align-items:center; justify-content:space-between; }
   .app-title { font-size:22px; font-weight:700; letter-spacing:1px; }
   .app-title span { color:var(--primary); }
+  .header-actions { display:flex; gap:6px; }
+  .icon-btn {
+    border:1px solid var(--border); background:#fff; color:var(--muted);
+    border-radius:8px; width:32px; height:32px; cursor:pointer; font-size:15px;
+    display:flex; align-items:center; justify-content:center; transition:.15s;
+  }
+  .icon-btn:hover { border-color:var(--primary); color:var(--primary); }
 
   .date-bar {
     display:flex; align-items:center; justify-content:space-between;
@@ -55,7 +63,6 @@
   }
   .btn-copy:hover { border-color:var(--primary); color:var(--primary); }
   .btn-copy:disabled { opacity:.5; cursor:not-allowed; }
-  .copy-row { display:flex; gap:10px; margin-bottom:16px; }
 
   .add-box {
     background:var(--card); border-radius:16px; padding:16px; box-shadow:0 2px 10px rgba(79,110,247,.06);
@@ -135,12 +142,91 @@
     font-size:14px; opacity:0; pointer-events:none; transition:.25s; z-index:99;
   }
   .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+  /* ---- 修改计划弹窗 ---- */
+  .modal-mask {
+    position:fixed; inset:0; background:rgba(20,24,40,.45);
+    display:none; align-items:center; justify-content:center; z-index:150; padding:20px;
+  }
+  .modal-mask.show { display:flex; }
+  .modal {
+    background:#fff; width:100%; max-width:400px; border-radius:18px; padding:22px;
+    box-shadow:0 12px 40px rgba(0,0,0,.18);
+  }
+  .modal h3 { font-size:16px; font-weight:700; margin-bottom:4px; }
+  .modal .sub { font-size:12px; color:var(--muted); margin-bottom:16px; }
+  .modal .m-row { display:flex; gap:8px; align-items:center; margin-bottom:10px; }
+  .modal .m-row input[type="time"] {
+    flex:1; padding:10px; border:1px solid var(--border); border-radius:10px;
+    font-size:15px; color:var(--text); background:#f8f9fd;
+  }
+  .modal .m-row .sep { color:var(--muted); }
+  .modal input.m-input, .modal textarea.m-input {
+    width:100%; padding:11px; border:1px solid var(--border); border-radius:10px;
+    font-size:15px; margin-bottom:10px; background:#f8f9fd; color:var(--text); font-family:inherit;
+  }
+  .modal textarea.m-input { resize:none; height:40px; }
+  .modal input.m-input:focus, .modal textarea.m-input:focus,
+  .modal .m-row input:focus { outline:none; border-color:var(--primary); background:#fff; }
+  .modal-actions { display:flex; gap:10px; margin-top:4px; }
+  .modal-actions button { flex:1; padding:11px; border-radius:10px; font-size:14px; cursor:pointer; }
+  .m-save { border:none; background:var(--primary); color:#fff; font-weight:600; }
+  .m-save:hover { background:var(--primary-dark); }
+  .m-cancel { border:1px solid var(--border); background:#fff; color:var(--muted); }
+
+  /* ---- 密码门禁 ---- */
+  .gate {
+    position:fixed; inset:0; z-index:200; background:linear-gradient(135deg,#eef1fb,#f4f6fb);
+    display:flex; align-items:center; justify-content:center; padding:20px;
+    transition:opacity .25s;
+  }
+  .gate.hide { opacity:0; pointer-events:none; }
+  .gate-card {
+    background:#fff; width:100%; max-width:360px; border-radius:20px; padding:28px 24px;
+    box-shadow:0 12px 40px rgba(79,110,247,.12); text-align:center;
+  }
+  .gate-card .lock-ico { font-size:40px; margin-bottom:8px; }
+  .gate-card h2 { font-size:18px; font-weight:700; margin-bottom:4px; }
+  .gate-card .sub { font-size:12px; color:var(--muted); margin-bottom:18px; }
+  .gate-card input {
+    width:100%; padding:12px; border:1px solid var(--border); border-radius:10px;
+    font-size:15px; margin-bottom:10px; text-align:center; background:#f8f9fd;
+  }
+  .gate-card input:focus { outline:none; border-color:var(--primary); background:#fff; }
+  .gate-card .err { color:var(--danger); font-size:12px; min-height:16px; margin-bottom:6px; }
+  .gate-btn {
+    width:100%; padding:12px; border:none; border-radius:10px; background:var(--primary);
+    color:#fff; font-size:15px; font-weight:600; cursor:pointer; transition:.15s;
+  }
+  .gate-btn:hover { background:var(--primary-dark); }
+  .gate-tip { font-size:11px; color:var(--muted); margin-top:12px; line-height:1.6; }
 </style>
 </head>
 <body>
-<div class="app">
+
+<!-- 密码门禁 -->
+<div class="gate" id="gate">
+  <div class="gate-card">
+    <div class="lock-ico">🔒</div>
+    <h2 id="gateTitle">设置密码</h2>
+    <div class="sub" id="gateSub">第一次使用，请设置一个密码</div>
+    <input type="password" id="pass1" placeholder="请输入密码" autocomplete="off">
+    <input type="password" id="pass2" placeholder="请再次输入密码" autocomplete="off">
+    <div class="err" id="gateErr"></div>
+    <button class="gate-btn" id="gateBtn">确认</button>
+    <div class="gate-tip" id="gateTip">提示：密码保存在你这个浏览器的本地，请牢记。关闭后重开需要重新输入。</div>
+  </div>
+</div>
+
+<div class="app" id="app">
   <header>
-    <div class="app-title">🗓️ <span>日计划工具</span></div>
+    <div class="header-row">
+      <div class="app-title">🗓️ <span>日计划工具</span></div>
+      <div class="header-actions">
+        <button class="icon-btn" id="changePassBtn" title="修改密码 🔐">🔑</button>
+        <button class="icon-btn" id="lockBtn" title="锁定">🔒</button>
+      </div>
+    </div>
   </header>
 
   <div class="date-bar">
@@ -181,9 +267,30 @@
   <div class="toast" id="toast"></div>
 </div>
 
+<!-- 修改计划弹窗 -->
+<div class="modal-mask" id="editMask">
+  <div class="modal">
+    <h3>✏️ 修改计划</h3>
+    <div class="sub">修改时间段、任务或备注</div>
+    <div class="m-row">
+      <input type="time" id="editStart">
+      <span class="sep">—</span>
+      <input type="time" id="editEnd">
+    </div>
+    <input type="text" id="editTitle" class="m-input" placeholder="要做什么？">
+    <textarea id="editNote" class="m-input" placeholder="备注（可选）"></textarea>
+    <div class="modal-actions">
+      <button class="m-cancel" id="editCancelBtn">取消</button>
+      <button class="m-save" id="editSaveBtn">保存</button>
+    </div>
+  </div>
+</div>
+
 <script>
 (function(){
   const storeKey = 'day-plan-tool-v1';
+  const PASS_KEY='planner_pass_v1';
+  const UNLOCK_KEY='planner_unlock_v1';
   const WEEK = ['周日','周一','周二','周三','周四','周五','周六'];
   let current = today();
   let data = load();
@@ -213,6 +320,74 @@
     list.sort((a,b)=> (a.start||'00:00').localeCompare(b.start||'00:00'));
   }
 
+  // ---- 密码工具 ----
+  function enc(s){ return btoa(unescape(encodeURIComponent(s))); }
+  function dec(s){ try{ return decodeURIComponent(escape(atob(s))); }catch(e){ return ''; } }
+  function getPass(){ return localStorage.getItem(PASS_KEY); }
+  function setPass(p){ localStorage.setItem(PASS_KEY, enc(p)); }
+  function isUnlocked(){ return sessionStorage.getItem(UNLOCK_KEY)==='1'; }
+  function markUnlocked(){ sessionStorage.setItem(UNLOCK_KEY,'1'); }
+
+  function enterApp(){
+    $('gate').classList.add('hide');
+    $('app').style.display='block';
+    render();
+  }
+  function showGate(){
+    $('app').style.display='none';
+    $('gate').classList.remove('hide');
+  }
+  function setGate(mode){
+    if(mode==='setup'){
+      $('gateTitle').textContent='设置密码';
+      $('gateSub').textContent='第一次使用，请设置一个密码（至少 4 位）';
+      $('gateBtn').textContent='保存并进入';
+      $('pass2').style.display='block';
+      document._mode='setup';
+    }else{
+      $('gateTitle').textContent='请输入密码';
+      $('gateSub').textContent='本工具已加密，输入密码解锁';
+      $('gateBtn').textContent='解锁';
+      $('pass2').style.display='none';
+      document._mode='unlock';
+    }
+    $('pass1').value=''; $('pass2').value=''; $('gateErr').textContent='';
+  }
+  $('pass1').addEventListener('keydown',e=>{ if(e.key==='Enter') handleGate(); });
+  $('pass2').addEventListener('keydown',e=>{ if(e.key==='Enter') handleGate(); });
+  $('gateBtn').onclick=handleGate;
+
+  function handleGate(){
+    const m=document._mode;
+    const err=$('gateErr');
+    const p1=$('pass1').value;
+    if(m==='setup'){
+      const p2=$('pass2').value;
+      if(p1.length<4){ err.textContent='密码至少 4 位'; return; }
+      if(p1!==p2){ err.textContent='两次输入不一致，请重新输入'; return; }
+      setPass(p1); markUnlocked(); toast('密码设置成功'); enterApp();
+    }else{
+      if(dec(getPass())===p1){ markUnlocked(); enterApp(); }
+      else { err.textContent='密码错误，请重试'; $('pass1').value=''; $('pass1').focus(); }
+    }
+  }
+
+  // 修改密码（需当前密码）
+  function openChangePass(){
+    const cur=prompt('请输入当前密码：');
+    if(cur===null) return;
+    if(dec(getPass())!==cur){ toast('当前密码错误'); return; }
+    const np=prompt('请输入新密码（至少 4 位）：');
+    if(!np || np.length<4){ toast('新密码无效'); return; }
+    const np2=prompt('请再次输入新密码：');
+    if(np!==np2){ toast('两次输入不一致'); return; }
+    setPass(np); toast('密码已修改');
+  }
+  function lock(){ sessionStorage.removeItem(UNLOCK_KEY); showGate(); setGate('unlock'); }
+
+  $('changePassBtn').onclick=openChangePass;
+  $('lockBtn').onclick=lock;
+
   // ---- render ----
   function render(){
     const plans = dayPlans(current);
@@ -229,7 +404,6 @@
     if(plans.length===0){
       const div=document.createElement('div');
       div.className='empty';
-      div.innerHTML = '<div style="display:none"></div>';
       div.innerHTML = '<div class="big">🌤️</div><div>今天还没有安排，先添加一条计划吧</div>';
       const b=document.createElement('button');
       b.textContent='添加计划';
@@ -239,7 +413,6 @@
       return;
     }
 
-    // group by timeframe ranges for filter? keep flat, sorted
     plans.forEach(p=>{
       const item=document.createElement('div');
       item.className='plan-item'+(p.done?' done':'');
@@ -267,6 +440,9 @@
 
       const ops=document.createElement('div');
       ops.className='plan-ops';
+      const ed=document.createElement('button');
+      ed.className='op-btn'; ed.textContent='✏️'; ed.title='编辑';
+      ed.onclick=()=>openEdit(p);
       const del=document.createElement('button');
       del.className='op-btn'; del.textContent='🗑'; del.title='删除';
       del.onclick=()=>{
@@ -274,6 +450,7 @@
         arr.splice(arr.indexOf(p),1);
         save(); render(); toast('已删除');
       };
+      ops.appendChild(ed);
       ops.appendChild(del);
 
       item.appendChild(check);
@@ -319,6 +496,37 @@
     clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),1600);
   }
 
+  // ---- 修改计划 ----
+  let editTarget=null;
+  function openEdit(p){
+    editTarget=p;
+    $('editStart').value=p.start||'';
+    $('editEnd').value=p.end||'';
+    $('editTitle').value=p.title||'';
+    $('editNote').value=p.note||'';
+    $('editMask').classList.add('show');
+    $('editTitle').focus();
+  }
+  function saveEdit(){
+    if(!editTarget) return;
+    const title=$('editTitle').value.trim();
+    if(!title){ toast('要做什么不能为空'); return; }
+    editTarget.start=$('editStart').value||'';
+    editTarget.end=$('editEnd').value||'';
+    editTarget.title=title;
+    editTarget.note=$('editNote').value.trim();
+    editTarget.done=editTarget.done||false;
+    save(); closeEdit(); render(); toast('已保存修改');
+  }
+  function closeEdit(){
+    editTarget=null;
+    $('editMask').classList.remove('show');
+  }
+  $('editSaveBtn').onclick=saveEdit;
+  $('editCancelBtn').onclick=closeEdit;
+  $('editTitle').addEventListener('keydown',e=>{ if(e.key==='Enter') saveEdit(); });
+  $('editNote').addEventListener('keydown',e=>{ if(e.key==='Enter') saveEdit(); });
+
   // ---- nav ----
   function goto(d){ current=d; render(); }
 
@@ -330,7 +538,13 @@
   $('titleInput').addEventListener('keydown',e=>{ if(e.key==='Enter') addPlan(); });
   $('noteInput').addEventListener('keydown',e=>{ if(e.key==='Enter') addPlan(); });
 
-  render();
+  // ---- 启动：先判断密码 ----
+  const stored=getPass();
+  if(!stored){ setGate('setup'); }
+  else if(isUnlocked()){ enterApp(); }
+  else { setGate('unlock'); }
+  $('pass1').focus();
+  window._showGate=showGate; window._setGate=setGate;
 })();
 </script>
 </body>
