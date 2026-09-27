@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>日计划工具</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  :root {
+    --bg:#f4f6fb;
+    --card:#ffffff;
+    --primary:#4f6ef7;
+    --primary-dark:#3a55e0;
+    --text:#1f2430;
+    --muted:#8a91a5;
+    --border:#e6e9f2;
+    --danger:#e5474f;
+    --done:#b9bfcf;
+  }
+  body {
+    font-family:"PingFang SC","Microsoft YaHei",system-ui,-apple-system,sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    min-height:100vh;
+  }
+  .app { max-width:760px; margin:0 auto; padding:24px 20px 80px; }
+
+  header { text-align:center; margin-bottom:0; padding:8px 0 4px; }
+  .app-title { font-size:22px; font-weight:700; letter-spacing:1px; }
+  .app-title span { color:var(--primary); }
+
+  .date-bar {
+    display:flex; align-items:center; justify-content:space-between;
+    background:var(--card); border-radius:16px; padding:12px 14px;
+    margin:16px 0 14px; box-shadow:0 2px 10px rgba(79,110,247,.06);
+  }
+  .date-nav { display:flex; align-items:center; gap:8px; }
+  .date-nav button {
+    width:34px; height:34px; border-radius:10px; border:1px solid var(--border);
+    background:#fff; color:var(--text); font-size:18px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; transition:.15s;
+  }
+  .date-nav button:hover { border-color:var(--primary); color:var(--primary); }
+  .date-display { font-size:18px; font-weight:700; min-width:150px; text-align:center; }
+  .date-display .week { font-size:12px; color:var(--muted); font-weight:500; margin-top:2px; }
+  .date-bar input[type="date"] {
+    border:1px solid var(--border); border-radius:10px; padding:8px 10px;
+    font-size:14px; color:var(--text); cursor:pointer; background:#fff;
+  }
+
+  .btn-copy {
+    border:1px solid var(--border); background:#fff; color:var(--muted);
+    border-radius:8px; padding:5px 10px; font-size:12px; cursor:pointer;
+    display:inline-flex; align-items:center; gap:5px; transition:.15s;
+  }
+  .btn-copy:hover { border-color:var(--primary); color:var(--primary); }
+  .btn-copy:disabled { opacity:.5; cursor:not-allowed; }
+  .copy-row { display:flex; gap:10px; margin-bottom:16px; }
+
+  .add-box {
+    background:var(--card); border-radius:16px; padding:16px; box-shadow:0 2px 10px rgba(79,110,247,.06);
+    display:flex; flex-direction:column; gap:12px;
+  }
+  .add-box h3 { font-size:14px; color:var(--muted); font-weight:600; }
+  .time-row { display:flex; gap:8px; align-items:center; }
+  .time-row input[type="time"] {
+    flex:1; padding:10px; border:1px solid var(--border); border-radius:10px;
+    font-size:15px; color:var(--text); background:#f8f9fd;
+  }
+  .time-row .sep { color:var(--muted); }
+  .input-title {
+    width:100%; padding:12px; border:1px solid var(--border); border-radius:10px;
+    font-size:15px; color:var(--text); background:#f8f9fd;
+  }
+  .input-title:focus, .time-row input:focus { outline:none; border-color:var(--primary); background:#fff; }
+  .add-actions { display:flex; gap:8px; }
+  .add-note {
+    flex:1; padding:12px; border:1px solid var(--border); border-radius:10px;
+    font-size:14px; resize:none; height:44px; background:#f8f9fd; font-family:inherit;
+  }
+  .add-note:focus { outline:none; border-color:var(--primary); }
+  .btn-add {
+    padding:0 20px; border:none; border-radius:10px; background:var(--primary);
+    color:#fff; font-size:15px; font-weight:600; cursor:pointer; transition:.15s;
+  }
+  .btn-add:hover { background:var(--primary-dark); }
+
+  .section-head { display:flex; align-items:center; justify-content:space-between; margin:20px 0 10px; }
+  .section-head h2 { font-size:15px; font-weight:700; }
+  .section-head .count { font-size:13px; color:var(--muted); }
+
+  .plan-list { display:flex; flex-direction:column; gap:10px; }
+  .plan-item {
+    background:var(--card); border-radius:14px; padding:14px 16px;
+    box-shadow:0 2px 10px rgba(79,110,247,.05); border-left:4px solid var(--primary);
+    display:flex; gap:12px; align-items:flex-start; transition:.15s;
+  }
+  .plan-item.done { border-left-color:#c8cee5; opacity:.65; }
+  .plan-item.done .plan-title { text-decoration:line-through; color:var(--done); }
+  .check {
+    width:20px; height:20px; min-width:20px; border-radius:50%;
+    border:2px solid #c8cee5; cursor:pointer; margin-top:2px;
+    display:flex; align-items:center; justify-content:center; font-size:12px; color:#fff;
+    background:#fff; transition:.15s;
+  }
+  .plan-item.done .check { background:#4caf6d; border-color:#4caf6d; }
+  .plan-body { flex:1; }
+  .plan-time {
+    display:inline-flex; align-items:center; gap:6px;
+    background:#eef1fb; color:var(--primary); font-weight:600; font-size:13px;
+    padding:3px 10px; border-radius:20px; margin-bottom:6px;
+  }
+  .plan-time .arc { color:var(--muted); font-weight:400; }
+  .plan-title { font-size:15px; font-weight:600; }
+  .plan-note { font-size:13px; color:var(--muted); margin-top:4px; }
+  .plan-ops { display:flex; gap:4px; align-items:center; }
+  .op-btn {
+    width:30px; height:30px; border:none; background:transparent; border-radius:8px;
+    color:var(--muted); font-size:15px; cursor:pointer; transition:.15s;
+  }
+  .op-btn:hover { background:#f0f2f8; color:var(--danger); }
+
+  .empty {
+    text-align:center; padding:40px 20px; color:var(--muted);
+    background:var(--card); border-radius:16px; border:2px dashed var(--border);
+  }
+  .empty .big { font-size:40px; margin-bottom:10px; }
+  .empty button {
+    margin-top:14px; padding:9px 18px; border:none; border-radius:10px;
+    background:var(--primary); color:#fff; cursor:pointer; font-size:14px;
+  }
+  .toast {
+    position:fixed; bottom:30px; left:50%; transform:translateX(-50%) translateY(20px);
+    background:var(--text); color:#fff; padding:10px 18px; border-radius:12px;
+    font-size:14px; opacity:0; pointer-events:none; transition:.25s; z-index:99;
+  }
+  .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="app-title">🗓️ <span>日计划工具</span></div>
+  </header>
+
+  <div class="date-bar">
+    <div class="date-nav">
+      <button id="prevDay" title="前一天">‹</button>
+      <div class="date-display">
+        <div id="dateText"></div>
+        <div id="weekText" class="week"></div>
+      </div>
+      <button id="nextDay" title="后一天">›</button>
+    </div>
+    <input type="date" id="datePicker">
+  </div>
+
+  <div class="add-box">
+    <h3>＋ 新增计划</h3>
+    <div class="time-row">
+      <input type="time" id="startTime" value="09:00">
+      <span class="sep">—</span>
+      <input type="time" id="endTime" value="10:00">
+    </div>
+    <input type="text" id="titleInput" class="input-title" placeholder="要做什么？例如：完成周报初稿">
+    <div class="add-actions">
+      <input type="text" id="noteInput" class="add-note" placeholder="备注（可选）">
+      <button class="btn-add" id="addBtn">添加</button>
+    </div>
+  </div>
+
+  <div class="section-head">
+    <h2 id="listTitle">当日计划</h2>
+    <div style="display:flex; align-items:center; gap:10px;">
+      <button class="btn-copy" id="copyYesterday">↩ 复制昨日</button>
+      <span class="count" id="countText"></span>
+    </div>
+  </div>
+  <div class="plan-list" id="planList"></div>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+(function(){
+  const storeKey = 'day-plan-tool-v1';
+  const WEEK = ['周日','周一','周二','周三','周四','周五','周六'];
+  let current = today();
+  let data = load();
+
+  const $ = id => document.getElementById(id);
+
+  function today(){
+    const d = new Date();
+    return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+  }
+  function pad(n){ return n<10 ? '0'+n : ''+n; }
+  function fmt(d){
+    const y=d.getFullYear(), m=pad(d.getMonth()+1), dd=pad(d.getDate());
+    return y+'-'+m+'-'+dd;
+  }
+  function parse(s){ return new Date(s+'T00:00:00'); }
+  function shift(s, delta){
+    const d = parse(s); d.setDate(d.getDate()+delta); return fmt(d);
+  }
+  function load(){
+    try{ return JSON.parse(localStorage.getItem(storeKey)) || {}; }
+    catch(e){ return {}; }
+  }
+  function save(){ localStorage.setItem(storeKey, JSON.stringify(data)); }
+  function dayPlans(d){ if(!data[d]) data[d]=[]; return data[d]; }
+  function sortPlans(list){
+    list.sort((a,b)=> (a.start||'00:00').localeCompare(b.start||'00:00'));
+  }
+
+  // ---- render ----
+  function render(){
+    const plans = dayPlans(current);
+    sortPlans(plans);
+    const dt = parse(current);
+    $('dateText').textContent = dt.getMonth()+1+'月'+dt.getDate()+'日';
+    $('weekText').textContent = WEEK[dt.getDay()] + (current===today()? ' · 今天':'');
+    $('datePicker').value = current;
+    $('countText').textContent = plans.length + ' 项';
+    $('copyYesterday').disabled = false;
+
+    const list = $('planList');
+    list.innerHTML = '';
+    if(plans.length===0){
+      const div=document.createElement('div');
+      div.className='empty';
+      div.innerHTML = '<div style="display:none"></div>';
+      div.innerHTML = '<div class="big">🌤️</div><div>今天还没有安排，先添加一条计划吧</div>';
+      const b=document.createElement('button');
+      b.textContent='添加计划';
+      b.onclick=()=>{ $('titleInput').focus(); window.scrollTo({top:0,behavior:'smooth'}); };
+      div.appendChild(b);
+      list.appendChild(div);
+      return;
+    }
+
+    // group by timeframe ranges for filter? keep flat, sorted
+    plans.forEach(p=>{
+      const item=document.createElement('div');
+      item.className='plan-item'+(p.done?' done':'');
+
+      const check=document.createElement('div');
+      check.className='check';
+      check.textContent='✓';
+      check.title='完成 / 取消完成';
+      check.onclick=()=>{ p.done=!p.done; save(); render(); };
+
+      const body=document.createElement('div');
+      body.className='plan-body';
+      const time=document.createElement('div');
+      time.className='plan-time';
+      time.innerHTML = '<span>'+esc(p.start||'--:--')+'</span><span class="arc">→</span><span>'+esc(p.end||'--:--')+'</span>';
+      const title=document.createElement('div');
+      title.className='plan-title'; title.textContent=p.title;
+      body.appendChild(time);
+      body.appendChild(title);
+      if(p.note){
+        const note=document.createElement('div');
+        note.className='plan-note'; note.textContent=p.note;
+        body.appendChild(note);
+      }
+
+      const ops=document.createElement('div');
+      ops.className='plan-ops';
+      const del=document.createElement('button');
+      del.className='op-btn'; del.textContent='🗑'; del.title='删除';
+      del.onclick=()=>{
+        const arr=dayPlans(current);
+        arr.splice(arr.indexOf(p),1);
+        save(); render(); toast('已删除');
+      };
+      ops.appendChild(del);
+
+      item.appendChild(check);
+      item.appendChild(body);
+      item.appendChild(ops);
+      list.appendChild(item);
+    });
+  }
+
+  function esc(s){
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  // ---- actions ----
+  function addPlan(){
+    const start=$('startTime').value || '09:00';
+    const end=$('endTime').value || '';
+    const title=$('titleInput').value.trim();
+    if(!title){ toast('请填写要做什么'); $('titleInput').focus(); return; }
+    const note=$('noteInput').value.trim();
+    const list=dayPlans(current);
+    list.push({id:Date.now()+Math.random(), start, end, title, note, done:false});
+    save();
+    $('titleInput').value='';
+    $('noteInput').value='';
+    render();
+    toast('已添加');
+  }
+
+  function copyYesterday(){
+    const yDate=shift(current,-1);
+    const src=dayPlans(yDate).filter(p=>p&&p.title);
+    if(src.length===0){ toast('昨日没有计划可复制'); return; }
+    const dst=dayPlans(current);
+    src.forEach(p=>{
+      dst.push({id:Date.now()+Math.random(), start:p.start, end:p.end, title:p.title, note:p.note, done:false});
+    });
+    save(); render(); toast('已复制昨日 '+src.length+' 项计划');
+  }
+
+  function toast(msg){
+    const t=$('toast'); t.textContent=msg; t.classList.add('show');
+    clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),1600);
+  }
+
+  // ---- nav ----
+  function goto(d){ current=d; render(); }
+
+  $('prevDay').onclick=()=>goto(shift(current,-1));
+  $('nextDay').onclick=()=>goto(shift(current,1));
+  $('datePicker').onchange=e=>{ if(e.target.value) goto(e.target.value); };
+  $('addBtn').onclick=addPlan;
+  $('copyYesterday').onclick=copyYesterday;
+  $('titleInput').addEventListener('keydown',e=>{ if(e.key==='Enter') addPlan(); });
+  $('noteInput').addEventListener('keydown',e=>{ if(e.key==='Enter') addPlan(); });
+
+  render();
+})();
+</script>
+</body>
+</html>
